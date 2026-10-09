@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusNova - Decentralized Ecosystem</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #0b1528 0%, #030712 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      padding-bottom: 50px;
+    }
+
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .header-card {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.75));
+      border: 1px solid rgba(245, 176, 65, 0.25);
+      border-radius: 20px;
+      padding: 22px 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #ffffff, #f5b041);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 2px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: #38bdf8;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .wallet-box {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(3, 7, 18, 0.85);
+      border: 1px solid rgba(245, 176, 65, 0.35);
+      padding: 6px 16px;
+      border-radius: 30px;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .wallet-status-dot {
+      width: 9px;
+      height: 9px;
+      background: #f59e0b;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #f59e0b;
+    }
+
+    .wallet-status-dot.connected {
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    .wallet-status-dot.error {
+      background: #ef4444;
+      box-shadow: 0 0 10px #ef4444;
+    }
+
+    .wallet-addr {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      font-family: monospace;
+      font-weight: 600;
+    }
+
+    /* Mandatory $2 Activation Gate */
+    #gate-screen {
+      display: none;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(245, 176, 65, 0.5);
+      border-radius: 18px;
+      padding: 24px 18px;
+      margin-bottom: 16px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .gate-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #f5b041;
+      margin-bottom: 8px;
+    }
+
+    .gate-price {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #10b981;
+      margin-bottom: 10px;
+    }
+
+    .gate-text {
+      font-size: 12.5px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* Main App Area (Locked until active) */
+    #main-app {
+      display: none;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 95px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      padding: 10px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #090d16;
+      border-color: #f59e0b;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #f5b041;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+      font-size: 12.5px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #94a3b8; }
+    .info-val { font-weight: 700; color: #f8fafc; }
+
+    .pkg-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .pkg-box {
+      background: rgba(2, 6, 23, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .pkg-box.gold {
+      border-color: rgba(245, 176, 65, 0.6);
+      background: linear-gradient(180deg, rgba(245, 176, 65, 0.1), rgba(2, 6, 23, 0.9));
+    }
+
+    .pkg-box-title { font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; }
+    .pkg-box-price { font-family: 'Space Grotesk', sans-serif; font-size: 21px; font-weight: 800; color: #38bdf8; margin-bottom: 6px; }
+    .pkg-box.gold .pkg-box-price { color: #f5b041; }
+    .pkg-box-desc { font-size: 10px; color: #cbd5e1; line-height: 1.4; margin-bottom: 10px; }
+
+    .action-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      border: none;
+      padding: 10px 0;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-btn.gold {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      font-weight: 800;
+    }
+    .action-btn.green {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      font-weight: 800;
+      padding: 13px 0;
+      font-size: 14px;
+    }
+    .action-btn:hover { opacity: 0.9; }
+
+    .matrix-6-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .matrix-slot-card {
+      background: rgba(3, 7, 18, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .slot-name { font-size: 11px; color: #38bdf8; font-weight: 800; letter-spacing: 0.5px; }
+    .slot-cost { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 800; color: #fff; margin: 3px 0 10px 0; }
+    
+    .slot-nodes {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .node-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px dashed rgba(255, 255, 255, 0.3);
+    }
+    .node-circle.filled {
+      background: #10b981;
+      border: 1px solid #10b981;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+    .jackpot-hero {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(245, 176, 65, 0.4);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .jackpot-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #f5b041;
+      margin: 4px 0;
+      text-shadow: 0 0 15px rgba(245, 176, 65, 0.3);
+    }
+    .countdown-timer {
+      display: inline-block;
+      background: rgba(3, 7, 18, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      padding: 6px 14px;
+      border-radius: 20px;
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-top: 6px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .input-field {
+      flex: 1;
+      background: rgba(3, 7, 18, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 12.5px;
+      outline: none;
+    }
+
+    .status-msg {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-align: center;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .status-msg.error { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; display: block; }
+    .status-msg.success { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #6ee7b7; display: block; }
+    .status-msg.info { background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #7dd3fc; display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <div class="header-card">
+      <div class="brand-title">NEXUSNOVA</div>
+      <div class="brand-sub">All-in-One Decentralized Ecosystem</div>
+      
+      <div class="wallet-box" onclick="connectWallet()">
+        <div class="wallet-status-dot" id="wallet-dot"></div>
+        <div class="wallet-addr" id="wallet-addr-disp">Connecting Wallet...</div>
+      </div>
+    </div>
+
+    <div id="status-box" class="status-msg"></div>
+
+    <!-- MANDATORY $2 ACTIVATION GATE SCREEN -->
+    <div id="gate-screen">
+      <div class="gate-title">ACCOUNT ACTIVATION REQUIRED</div>
+      <div class="gate-price">$2.00 USDT</div>
+      <p class="gate-text">
+        Welcome to NexusNova! To unlock the decentralized dashboard, generate your official global ID, and earn 15-Day Global Jackpot eligibility, please activate your account with $2 USDT.
+      </p>
+      <button class="action-btn green" onclick="activateAccount2USD()">
+        🚀 Pay $2 USDT & Unlock Ecosystem
+      </button>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="main-app">
+      
+      <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('profile')">👤 Profile</button>
+        <button class="tab-btn" onclick="switchTab('matrix')">🔄 Matrix Slots</button>
+        <button class="tab-btn" onclick="switchTab('staking')">📈 Staking Vault</button>
+        <button class="tab-btn" onclick="switchTab('lottery')">🎟️ 15-Day Jackpot</button>
+      </div>
+
+      <!-- 1. DASHBOARD TAB -->
+      <div id="tab-dashboard" class="tab-pane active">
+        
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📦 Single-Leg Global Distribution Tiers</div>
+            <span style="font-size:10px; color:#38bdf8; font-weight:700;">BEP-20 USDT</span>
+          </div>
+
+          <div class="pkg-grid">
+            <div class="pkg-box">
+              <div class="pkg-box-title">Basic</div>
+              <div class="pkg-box-price">$25</div>
+              <div class="pkg-box-desc">20 Levels Yield<br>(10 Up + 10 Down)</div>
+              <button class="action-btn" onclick="activatePackage(25)">Activate</button>
+            </div>
+
+            <div class="pkg-box">
+              <div class="pkg-box-title">Standard</div>
+              <div class="pkg-box-price">$50</div>
+              <div class="pkg-box-desc">30 Levels Yield<br>1 Reward Coupon</div>
+              <button class="action-btn" onclick="activatePackage(50)">Activate</button>
+            </div>
+
+            <div class="pkg-box gold">
+              <div class="pkg-box-title">Pro Elite</div>
+              <div class="pkg-box-price">$100</div>
+              <div class="pkg-box-desc">40 Levels Yield<br>2 Coupons + Pool</div>
+              <button class="action-btn gold" onclick="activatePackage(100)">Activate</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💰 Earnings & Direct Payout</div>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Total Earned:</span>
+            <span class="info-val" id="total-earned-disp">$0.00 USDT</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Withdrawable Balance:</span>
+            <span class="info-val" id="withdrawable-disp" style="color:#10b981;">$0.00 USDT</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Payout Mechanism:</span>
+            <span class="info-val" style="color:#f5b041;">50% Direct Wallet / 50% Auto Re-invest</span>
+          </div>
+          
+          <button class="action-btn gold" style="margin-top:14px; padding:12px 0; font-size:13px;" onclick="claimPayout()">
+            ⚡ Claim Instant Payout to Wallet
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 2. PROFILE TAB -->
+      <div id="tab-profile" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👤 User Account Overview</div>
+          </div>
+          
+          <div class="info-row">
+            <span class="info-label">Global User ID:</span>
+            <span class="info-val" id="user-id-disp" style="color:#f5b041;">#0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Sponsor ID:</span>
+            <span class="info-val" id="sponsor-id-disp">0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Single-Leg Position:</span>
+            <span class="info-val" id="global-pos-disp">#0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Direct Team Partners:</span>
+            <span class="info-val" id="direct-team-disp">0</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔗 Official Referral Link</div>
+          </div>
+          <div class="input-group">
+            <input type="text" class="input-field" id="ref-link-field" readonly value="">
+            <button class="action-btn gold" style="width:75px;" onclick="copyRefLink()">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. MATRIX SLOTS TAB -->
+      <div id="tab-matrix" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔄 Matrix Cyclic Spillover Slots (X3 / X6)</div>
+          </div>
+          <p style="font-size:11.5px; color:#94a3b8; margin-bottom:14px; line-height:1.5;">
+            Cycles upon filling 3 positions, distributing 100% peer-to-peer payout on-chain.
+          </p>
+
+          <div class="matrix-6-grid">
+            
+            <div class="matrix-slot-card">
+              <div class="slot-name">SLOT 1 • NOVICE</div>
+              <div class="slot-cost">$10 USDT</div>
+              <div class="slot-nodes">
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+              </div>
+              <button class="action-btn" onclick="activateSlot(1, 10)">Activate ($10)</button>
+            </div>
+
+            <div class="matrix-slot-card">
+              <div class="slot-name">SLOT 2 • ADVANCED</div>
+              <div class="slot-cost">$20 USDT</div>
+              <div class="slot-nodes">
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+              </div>
+              <button class="action-btn" onclick="activateSlot(2, 20)">Activate ($20)</button>
+            </div>
+
+            <div class="matrix-slot-card">
+              <div class="slot-name">SLOT 3 • MASTER</div>
+              <div class="slot-cost">$40 USDT</div>
+              <div class="slot-nodes">
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+              </div>
+              <button class="action-btn" onclick="activateSlot(3, 40)">Activate ($40)</button>
+            </div>
+
+            <div class="matrix-slot-card">
+              <div class="slot-name">SLOT 4 • GRAND</div>
+              <div class="slot-cost">$80 USDT</div>
+              <div class="slot-nodes">
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+              </div>
+              <button class="action-btn" onclick="activateSlot(4, 80)">Activate ($80)</button>
+            </div>
+
+            <div class="matrix-slot-card">
+              <div class="slot-name">SLOT 5 • PREMIER</div>
+              <div class="slot-cost">$160 USDT</div>
+              <div class="slot-nodes">
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+              </div>
+              <button class="action-btn" onclick="activateSlot(5, 160)">Activate ($160)</button>
+            </div>
+
+            <div class="matrix-slot-card">
+              <div class="slot-name">SLOT 6 • APEX ELITE</div>
+              <div class="slot-cost">$320 USDT</div>
+              <div class="slot-nodes">
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+                <div class="node-circle"></div>
+              </div>
+              <button class="action-btn gold" onclick="activateSlot(6, 320)">Activate ($320)</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. STAKING VAULT -->
+      <div id="tab-staking" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📈 Passive Yield Staking Vault</div>
+            <span style="font-size:11px; color:#10b981; font-weight:700;">1.0% Daily ROI</span>
+          </div>
+          <p style="font-size:11.5px; color:#94a3b8; margin-bottom:12px; line-height:1.5;">
+            Stake BEP-20 USDT into the contract vault to earn automated daily yields.
+          </p>
+
+          <div class="info-row">
+            <span class="info-label">Active Staked Principal:</span>
+            <span class="info-val" id="user-staked-disp">$0.00 USDT</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Accrued Yield Rewards:</span>
+            <span class="info-val" id="user-rewards-disp" style="color:#10b981;">$0.00 USDT</span>
+          </div>
+
+          <div class="input-group">
+            <input type="number" class="input-field" placeholder="Amount to Stake (Min $10)" id="stake-amount">
+            <button class="action-btn gold" style="width:100px;" onclick="stakeTokens()">Stake</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 15-DAY JACKPOT TAB -->
+      <div id="tab-lottery" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎟️ 15-Day Global Blockchain Jackpot</div>
+            <span style="font-size:11px; color:#10b981; font-weight:700;">100% FREE For Active Members</span>
+          </div>
+          
+          <div class="jackpot-hero">
+            <span style="font-size:11px; color:#cbd5e1; text-transform:uppercase; font-weight:700;">Live Accumulated Pool</span>
+            <div class="jackpot-val" id="jackpot-pool-disp">$0.00 USDT</div>
+            <div class="countdown-timer" id="jackpot-timer">Next Draw In: Calculating...</div>
+          </div>
+
+          <p style="font-size:11.5px; color:#94a3b8; line-height:1.6; margin-bottom:14px;">
+            ⚡ <strong>Automated Blockchain Allocation:</strong> A transparent share of platform volume feeds into this prize pool. Every 15 days, the smart contract executes an on-chain draw distributing prizes directly to qualified member wallets.
+          </p>
+
+          <div class="info-row">
+            <span class="info-label">Entry Qualification:</span>
+            <span class="info-val" style="color:#10b981;">Active Registered Account</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Cycle Interval:</span>
+            <span class="info-val">Every 15 Days</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const CONTRACT_ADDRESS = "0x56b92f91a648a3622460DB435968582DFc286d30";
+    const USDT_ADDRESS = "0x55d398326f99059fF775485246999027B3197955";
+    const ADMIN_WALLET = "0x33E4677827502E3089A66CfcFBd5C11C77C6680e";
+
+    const CONTRACT_ABI = [
+      "function registerAndBuy(address sponsor, uint256 amount) external",
+      "function claimPayout() external",
+      "function users(address) external view returns (bool isRegistered, uint256 globalIndex, address sponsor, uint256 totalEarned, uint256 totalWithdrawn, uint256 directCount)",
+      "function getWithdrawable(address) external view returns (uint256)"
+    ];
+
+    const ERC20_ABI = [
+      "function approve(address spender, uint256 amount) external returns (bool)",
+      "function allowance(address owner, address spender) external view returns (uint256)",
+      "function balanceOf(address account) external view returns (uint256)"
+    ];
+
+    let provider, signer, userAddress;
+    let mainContract, usdtContract;
+
+    function showStatus(text, type = "info") {
+      const box = document.getElementById('status-box');
+      box.innerText = text;
+      box.className = "status-msg " + type;
+      setTimeout(() => { box.className = "status-msg"; }, 7000);
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+      
+      event.currentTarget.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+    }
+
+    async function connectWallet() {
+      if (!window.ethereum) {
+        document.getElementById('wallet-addr-disp').innerText = "Please Open in Web3 Wallet";
+        setWalletStatus("error");
+        showStatus("Please open inside Trust Wallet or MetaMask DApp Browser!", "error");
+        return;
+      }
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        const accounts = await provider.send("eth_requestAccounts", []);
+        if (accounts.length > 0) {
+          signer = provider.getSigner();
+          userAddress = await signer.getAddress();
+
+          document.getElementById('wallet-addr-disp').innerText = userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
+          setWalletStatus("connected");
+
+          mainContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+          usdtContract = new ethers.Contract(USDT_ADDRESS, ERC20_ABI, signer);
+
+          await syncOnChainState();
+        }
+      } catch (err) {
+        setWalletStatus("error");
+        document.getElementById('wallet-addr-disp').innerText = "Wallet Error";
+        showStatus("Connection: " + (err.reason || err.message), "error");
+      }
+    }
+
+    function setWalletStatus(status) {
+      const dot = document.getElementById('wallet-dot');
+      dot.className = "wallet-status-dot " + (status === "connected" ? "connected" : (status === "error" ? "error" : ""));
+    }
+
+    async function syncOnChainState() {
+      if (!mainContract || !userAddress) return;
+      try {
+        const u = await mainContract.users(userAddress);
+        const gate = document.getElementById('gate-screen');
+        const mainApp = document.getElementById('main-app');
+
+        if (u.isRegistered) {
+          gate.style.display = "none";
+          mainApp.style.display = "block";
+
+          document.getElementById('user-id-disp').innerText = "#" + u.globalIndex.toString();
+          document.getElementById('global-pos-disp').innerText = "#" + u.globalIndex.toString();
+          document.getElementById('direct-team-disp').innerText = u.directCount.toString() + " Partners";
+
+          if (u.sponsor.toLowerCase() === ADMIN_WALLET.toLowerCase() || u.sponsor === ethers.constants.AddressZero) {
+            document.getElementById('sponsor-id-disp').innerText = "0 (Root Admin)";
+          } else {
+            const sp = await mainContract.users(u.sponsor);
+            document.getElementById('sponsor-id-disp').innerText = "#" + sp.globalIndex.toString();
+          }
+
+          document.getElementById('ref-link-field').value = window.location.origin + "/?ref=" + u.globalIndex.toString();
+          document.getElementById('total-earned-disp').innerText = "$" + ethers.utils.formatUnits(u.totalEarned, 18) + " USDT";
+
+          const withdrawable = await mainContract.getWithdrawable(userAddress);
+          document.getElementById('withdrawable-disp').innerText = "$" + ethers.utils.formatUnits(withdrawable, 18) + " USDT";
+        } else {
+          gate.style.display = "block";
+          mainApp.style.display = "none";
+        }
+      } catch (err) {
+        console.error("Sync error:", err);
+      }
+    }
+
+    async function activateAccount2USD() {
+      if (!userAddress) {
+        await connectWallet();
+        if (!userAddress) return;
+      }
+      try {
+        const bal = await usdtContract.balanceOf(userAddress);
+        const reqBal = ethers.utils.parseUnits("2", 18);
+
+        if (bal.lt(reqBal)) {
+          showStatus("Insufficient USDT balance! Minimum $2.00 USDT required in wallet.", "error");
+          return;
+        }
+
+        showStatus("Requesting USDT approval in wallet...", "info");
+        const allowance = await usdtContract.allowance(userAddress, CONTRACT_ADDRESS);
+
+        if (allowance.lt(reqBal)) {
+          const txApprove = await usdtContract.approve(CONTRACT_ADDRESS, ethers.constants.MaxUint256);
+          await txApprove.wait();
+        }
+
+        showStatus("Please confirm $2 USDT activation in your wallet...", "info");
+        const urlParams = new URLSearchParams(window.location.search);
+        let refParam = urlParams.get('ref');
+        let sponsorAddr = ADMIN_WALLET;
+
+        if (refParam && ethers.utils.isAddress(refParam)) {
+          sponsorAddr = refParam;
+        }
+
+        const tx = await mainContract.registerAndBuy(sponsorAddr, reqBal);
+        showStatus("Confirming on blockchain...", "info");
+        await tx.wait();
+
+        showStatus("Account successfully activated for $2 USDT!", "success");
+        await syncOnChainState();
+      } catch (err) {
+        showStatus("Activation error: " + (err.reason || err.message), "error");
+      }
+    }
+
+    async function activatePackage(amount) {
+      if (!userAddress) {
+        await connectWallet();
+        if (!userAddress) return;
+      }
+      try {
+        const amtWei = ethers.utils.parseUnits(amount.toString(), 18);
+        const bal = await usdtContract.balanceOf(userAddress);
+
+        if (bal.lt(amtWei)) {
+          showStatus("Insufficient USDT balance for $" + amount + " package!", "error");
+          return;
+        }
+
+        showStatus("Checking token allowance...", "info");
+        const allowance = await usdtContract.allowance(userAddress, CONTRACT_ADDRESS);
+
+        if (allowance.lt(amtWei)) {
+          const txApprove = await usdtContract.approve(CONTRACT_ADDRESS, ethers.constants.MaxUint256);
+          await txApprove.wait();
+        }
+
+        showStatus("Confirming package activation in wallet...", "info");
+        const urlParams = new URLSearchParams(window.location.search);
+        let sponsorAddr = urlParams.get('ref') || ADMIN_WALLET;
+        if (!ethers.utils.isAddress(sponsorAddr)) sponsorAddr = ADMIN_WALLET;
+
+        const tx = await mainContract.registerAndBuy(sponsorAddr, amtWei);
+        showStatus("Executing on BSC...", "info");
+        await tx.wait();
+
+        showStatus("Congratulations! $" + amount + " Package activated successfully!", "success");
+        await syncOnChainState();
+      } catch (err) {
+        showStatus("Transaction error: " + (err.reason || err.message), "error");
+      }
+    }
+
+    function activateSlot(slotNumber, cost) {
+      showStatus("Initiating Slot " + slotNumber + " ($" + cost + ") activation...", "info");
+      activatePackage(cost);
+    }
+
+    async function stakeTokens() {
+      const amtInput = document.getElementById('stake-amount').value;
+      if (!amtInput || Number(amtInput) < 10) {
+        showStatus("Minimum staking amount is 10 USDT!", "error");
+        return;
+      }
+      showStatus("Staking " + amtInput + " USDT initiated...", "info");
+    }
+
+    async function claimPayout() {
+      if (!mainContract || !userAddress) return;
+      try {
+        showStatus("Submitting instant payout claim...", "info");
+        const tx = await mainContract.claimPayout();
+        await tx.wait();
+        showStatus("Payout transferred directly to your BEP-20 wallet!", "success");
+        await syncOnChainState();
+      } catch (err) {
+        showStatus("Claim error: " + (err.reason || err.message), "error");
+      }
+    }
+
+    function copyRefLink() {
+      const input = document.getElementById('ref-link-field');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      showStatus("Referral link copied to clipboard!", "success");
+    }
+
+    function init15DayTimer() {
+      const now = Math.floor(Date.now() / 1000);
+      const cycleLength = 15 * 86400;
+      const timeLeft = cycleLength - (now % cycleLength);
+
+      function update() {
+        const d = Math.floor(timeLeft / 86400);
+        const h = Math.floor((timeLeft % 86400) / 3600);
+        const m = Math.floor((timeLeft % 3600) / 60);
+        const timerEl = document.getElementById('jackpot-timer');
+        if (timerEl) {
+          timerEl.innerText = "Next Draw In: " + d + "d " + h + "h " + m + "m";
+        }
+      }
+      update();
+    }
+
+    window.addEventListener('load', () => {
+      connectWallet();
+      init15DayTimer();
+    });
+
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', () => connectWallet());
+      window.ethereum.on('chainChanged', () => window.location.reload());
+    }
+  </script>
+</body>
+</html>
